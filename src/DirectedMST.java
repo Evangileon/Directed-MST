@@ -24,6 +24,11 @@ public class DirectedMST {
         }
     }
 
+    /**
+     * Transform weights so that every node except s has an incoming edge
+     * of weight 0
+     * @return total reduction
+     */
     public long transformWeight() {
         long sum = 0;
 
