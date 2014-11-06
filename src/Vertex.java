@@ -7,6 +7,10 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 public class Vertex implements Comparable<Vertex> {
+
+    boolean reachableFromS;
+    int index;
+
     // incoming edges
     LinkedList<Integer> inAdj = new LinkedList<>();
     LinkedList<Integer> inAdjWeight = new LinkedList<>();
@@ -27,11 +31,26 @@ public class Vertex implements Comparable<Vertex> {
     boolean known;
     int pred;
 
+    public int maxIncomingWeight() {
+        Iterator<Integer> inItor = inAdj.iterator();
+        Iterator<Integer> inWeightItor = inAdjWeight.iterator();
+        int max = Integer.MIN_VALUE;
+
+        while (inItor.hasNext()) {
+            inItor.next();
+            int weight = inWeightItor.next();
+            max = Math.max(max, weight);
+        }
+        return max;
+    }
+
     int maxIncomingWeight;
     int maxOutgoingWeight;
 
-    public Vertex() {
+    public Vertex(int index) {
+        this.index = index;
         known = false;
+        reachableFromS = false;
         dis = Integer.MAX_VALUE;
         pred = -1;
         maxIncomingWeight = Integer.MIN_VALUE;
@@ -91,6 +110,23 @@ public class Vertex implements Comparable<Vertex> {
                 break;
             }
         }
+    }
+
+    /**
+     * The the vertex has a zero-weight edge come into this
+     */
+    public int getOneIncomingZeroWeightEdgeVertex() {
+        Iterator<Integer> inItor = inAdj.iterator();
+        Iterator<Integer> inWeightItor = inAdjWeight.iterator();
+
+        while (inItor.hasNext()) {
+            int v_index = inItor.next();
+            int weight = inWeightItor.next();
+            if (weight == 0) {
+                return v_index;
+            }
+        }
+        return -1;
     }
 }
 
