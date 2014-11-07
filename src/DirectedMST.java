@@ -11,8 +11,8 @@ public class DirectedMST {
 
     long weightReduction;
 
-    Pair<Integer> minIncomingEdgeToCycle;
-    Pair<Integer> minOutgoingEdgeFromCycle;
+    HashMap<Integer, Pair<Integer>> minIncomingEdgesToCycle = new HashMap<>();
+    HashMap<Integer, Pair<Integer>> minOutgoingEdgesFromCycle = new HashMap<>();
 
     public DirectedMST(int num, int source) {
         if (num < 0) {
@@ -57,15 +57,13 @@ public class DirectedMST {
 
         List<Integer> cycle = walkBackward();
 
-        int x = shrinkCycle(cycle);
+        int x_index = shrinkCycle(cycle);
 
         // recursion for for MST in smaller graph
         DirectedMST smallerGraph = new DirectedMST(this.vertices, this.numVertices, this.source);
         weightReduction += smallerGraph.procedure();
 
-        // include the cycle into MST
-
-
+        recoverCycle(cycle, x_index);
 
         return weightReduction;
     }
@@ -284,8 +282,8 @@ public class DirectedMST {
         HashMap<Integer, Integer> imcomingVisitedWeight = new HashMap<>();
         HashMap<Integer, Integer> outgoingVisitedWeight = new HashMap<>();
         // record the edge corresponding to this minimum weight in the graph before shrinking
-        Pair<Integer> minIncomingEdge = null;
-        Pair<Integer> minOutgoingEdge = null;
+        Pair<Integer> minIncomingEdge;
+        Pair<Integer> minOutgoingEdge;
 
 
         // for each vertex in cycle
@@ -301,6 +299,11 @@ public class DirectedMST {
                 Vertex v = vertices.get(v_index);
                 int weight = adjWeightItor.next();
 
+                // skip vertex that in cycle
+                if (cycle.contains(v_index)) {
+                    continue;
+                }
+
                 // remove incoming edge to cycle
                 adjItor.remove();
                 adjWeightItor.remove();
@@ -309,11 +312,13 @@ public class DirectedMST {
 
                 if (!imcomingVisitedWeight.containsKey(v_index)) {
                     minIncomingEdge = new Pair<>(v_index, u_index);
+                    this.minIncomingEdgesToCycle.put(v_index, minIncomingEdge);
                     imcomingVisitedWeight.put(v_index, weight);
                 }
 
                 if (imcomingVisitedWeight.get(v_index) > weight) {
                     minIncomingEdge = new Pair<>(v_index, u_index);
+                    this.minIncomingEdgesToCycle.put(v_index, minIncomingEdge);
                     imcomingVisitedWeight.put(v_index, weight);
                 }
             }
@@ -326,11 +331,16 @@ public class DirectedMST {
             Iterator<Integer> adjItor = u.outAdj.iterator();
             Iterator<Integer> adjWeightItor = u.outAdjWeight.iterator();
 
-            // for all incoming edge of u
+            // for all outgoing edge of u
             while (adjItor.hasNext()) {
                 int v_index = adjItor.next();
                 Vertex v = vertices.get(v_index);
                 int weight = adjWeightItor.next();
+
+                // skip vertex that in cycle
+                if (cycle.contains(v_index)) {
+                    continue;
+                }
 
                 // remove outgoings edge to cycle
                 adjItor.remove();
@@ -340,18 +350,17 @@ public class DirectedMST {
 
                 if (!outgoingVisitedWeight.containsKey(v_index)) {
                     minOutgoingEdge = new Pair<>(u_index, v_index);
+                    this.minOutgoingEdgesFromCycle.put(v_index, minOutgoingEdge);
                     outgoingVisitedWeight.put(v_index, weight);
                 }
 
                 if (outgoingVisitedWeight.get(v_index) > weight) {
                     minOutgoingEdge = new Pair<>(u_index, v_index);
+                    this.minOutgoingEdgesFromCycle.put(v_index, minOutgoingEdge);
                     outgoingVisitedWeight.put(v_index, weight);
                 }
             }
         }
-
-        this.minIncomingEdgeToCycle = minIncomingEdge;
-        this.minOutgoingEdgeFromCycle = minOutgoingEdge;
 
         // insert new vertex x
         Vertex x = new Vertex(vertices.size());
@@ -374,5 +383,45 @@ public class DirectedMST {
         // the direction of path is the reverse of cycle list
 
         return x_index;
+    }
+
+    /**
+     * Include the cycle into MST
+     * @param cycle the zero cycle
+     * @param x_index to which cycle shrunk
+     */
+    public void recoverCycle(List<Integer> cycle, int x_index) {
+        // include the cycle into MST
+        Vertex x = vertices.get(x_index);
+
+        // MST has exactly one edge into x
+        int pred_x_index = x.pred;
+        Vertex u = vertices.get(pred_x_index);
+        Pair<Integer> incoming = minIncomingEdgesToCycle.get(pred_x_index);
+
+        // first link cycle in MST
+        int prev_index = cycle.get(0);
+        Vertex prev = vertices.get(prev_index);
+        ListIterator<Integer> revItor = cycle.listIterator(cycle.size());
+        while (revItor.hasPrevious()) {
+            int next_index = revItor.previous();
+            Vertex next = vertices.get(next_index);
+            prev.pathMST.add(next_index);
+            next.pred = prev_index;
+            prev_index = next_index;
+            prev = next;
+        }
+
+        // second break the edge from the cycle
+        int a_index = incoming.to;
+        Vertex a = vertices.get(a_index);
+        int prevToBeBreak_index = a.pred;
+        Vertex prevToBeBreak = vertices.get(prevToBeBreak_index);
+        prevToBeBreak.pathMST.remove((Object)(Integer)a_index);
+
+        // third recover incoming edge in MST
+        a.pred = pred_x_index;
+        u.pathMST.remove((Object)(Integer)x_index);
+        u.pathMST.add(a_index);
     }
 }
