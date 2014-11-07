@@ -11,6 +11,9 @@ public class DirectedMST {
 
     long weightReduction;
 
+    Pair<Integer> minIncomingEdgeToCycle;
+    Pair<Integer> minOutgoingEdgeFromCycle;
+
     public DirectedMST(int num, int source) {
         if (num < 0) {
             vertices = new ArrayList<>();
@@ -33,6 +36,14 @@ public class DirectedMST {
         this.numVertices = originalNum;
         this.source = source;
         this.weightReduction = 0;
+
+        // clear MST for recursion
+        for (Vertex v : vertices) {
+            v.known = false;
+            v.pred = -1;
+            v.pathMST.clear();
+            v.reachableFromS = false;
+        }
     }
 
     public long procedure() {
@@ -45,7 +56,34 @@ public class DirectedMST {
         }
 
         List<Integer> cycle = walkBackward();
-        return 0;
+
+        int x = shrinkCycle(cycle);
+
+        // recursion for for MST in smaller graph
+        DirectedMST smallerGraph = new DirectedMST(this.vertices, this.numVertices, this.source);
+        weightReduction += smallerGraph.procedure();
+
+        // include the cycle into MST
+
+
+
+        return weightReduction;
+    }
+
+    /**
+     * Traverse all vertices, if all are reachable from s, then return weight of MST.
+     * Otherwise dive into further procedure: shrink recursion and expand,
+     * and eventually return weight of MST.
+     *
+     * @param source index
+     * @return weight of MST
+     */
+    public long verifyMST(int source) {
+        if (bfsMSTReachableFromS(source)) {
+            return weightReduction;
+        }
+
+        return -1;
     }
 
     /**
@@ -56,12 +94,10 @@ public class DirectedMST {
      */
     public void addEdge(int src, int dst, int weight) {
         Vertex srcV = vertices.get(src);
-        srcV.outAdj.add(dst);
-        srcV.outAdjWeight.add(weight);
+        srcV.addOutAdj(dst, weight);
 
-        Vertex destV = vertices.get(dst);
-        destV.inAdj.add(src);
-        destV.inAdjWeight.add(weight);
+        Vertex dstV = vertices.get(dst);
+        dstV.addInAdj(src, weight);
     }
 
     /**
@@ -186,27 +222,6 @@ public class DirectedMST {
     }
 
     /**
-     * Traverse all vertices, if all are reachable from s, then return weight of MST.
-     * Otherwise dive into further procedure: shrink recursion and expand,
-     * and eventually return weight of MST.
-     *
-     * @param source index
-     * @return weight of MST
-     */
-    public long verifyMST(int source) {
-        if (bfsMSTReachableFromS(source)) {
-            return weightReduction;
-        }
-
-        // clear MST for recursion
-        for (Vertex v : vertices) {
-            v.pathMST.clear();
-        }
-
-        return -1;
-    }
-
-    /**
      * Walk backward from one of the vertices that are not reachable from s
      * @return cycle
      */
@@ -269,8 +284,8 @@ public class DirectedMST {
         HashMap<Integer, Integer> imcomingVisitedWeight = new HashMap<>();
         HashMap<Integer, Integer> outgoingVisitedWeight = new HashMap<>();
         // record the edge corresponding to this minimum weight in the graph before shrinking
-        Pair<Integer> minIncomingEdge;
-        Pair<Integer> minOutgoingEdge;
+        Pair<Integer> minIncomingEdge = null;
+        Pair<Integer> minOutgoingEdge = null;
 
 
         // for each vertex in cycle
@@ -335,6 +350,9 @@ public class DirectedMST {
             }
         }
 
+        this.minIncomingEdgeToCycle = minIncomingEdge;
+        this.minOutgoingEdgeFromCycle = minOutgoingEdge;
+
         // insert new vertex x
         Vertex x = new Vertex(vertices.size());
         int x_index = vertices.size();
@@ -343,21 +361,18 @@ public class DirectedMST {
         // For each edge (u,a) in the graph, with u not in C and a in C, introduce the edge (u,x) of weight w(u,a)
         for (Map.Entry<Integer, Integer> pair : imcomingVisitedWeight.entrySet()) {
             int u_index = pair.getKey();
-            x.addInAdj(u_index, pair.getValue());
-            Vertex u = vertices.get(u_index);
-            u.addOutAdj(x_index, pair.getValue());
+            addEdge(u_index, x_index, pair.getValue());
         }
 
         // For each edge (a,u) in the graph, with a in C and u not in C, introduce the edge (x,u) of weight w(a,u)
         for (Map.Entry<Integer, Integer> pair : outgoingVisitedWeight.entrySet()) {
             int u_index = pair.getKey();
-            x.addOutAdj(u_index, pair.getValue());
-            Vertex u = vertices.get(u_index);
-            u.addInAdj(x_index, pair.getValue());
+            addEdge(x_index, u_index, pair.getValue());
         }
+
 
         // the direction of path is the reverse of cycle list
 
-        return 0;
+        return x_index;
     }
 }

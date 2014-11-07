@@ -20,15 +20,6 @@ public class Vertex implements Comparable<Vertex> {
 
     LinkedList<Integer> pathMST = new LinkedList<>();
 
-    public int inDegree() {
-        return inAdj.size();
-    }
-
-    public int outDegree() {
-        return outAdj.size();
-    }
-
-    int top;
     int dis;
     boolean known;
     int pred;
@@ -108,15 +99,6 @@ public class Vertex implements Comparable<Vertex> {
                 return;
             }
         }
-    }
-
-    private boolean hasBeenAdded(int adjIndex) {
-
-        for (int tmp : inAdj) {
-            if (tmp == adjIndex)
-                return true;
-        }
-        return false;
     }
 
     @Override
