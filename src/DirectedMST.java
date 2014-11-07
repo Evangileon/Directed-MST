@@ -178,6 +178,11 @@ public class DirectedMST {
             return weightReduction;
         }
 
+        // clear MST for recursion
+        for (Vertex v : vertices) {
+            v.pathMST.clear();
+        }
+
         return -1;
     }
 
@@ -258,12 +263,14 @@ public class DirectedMST {
             // for all incoming edge of u
             while (adjItor.hasNext()) {
                 int v_index = adjItor.next();
-                //Vertex v = vertices.get(v_index);
+                Vertex v = vertices.get(v_index);
                 int weight = adjWeightItor.next();
 
                 // remove incoming edge to cycle
                 adjItor.remove();
                 adjWeightItor.remove();
+                // remove outgoing edge from vertex not in cycle
+                v.removeOutAdj(u_index);
 
                 if (!imcomingVisitedWeight.containsKey(v_index)) {
                     minIncomingEdge = new Pair<>(v_index, u_index);
@@ -287,12 +294,14 @@ public class DirectedMST {
             // for all incoming edge of u
             while (adjItor.hasNext()) {
                 int v_index = adjItor.next();
-                //Vertex v = vertices.get(v_index);
+                Vertex v = vertices.get(v_index);
                 int weight = adjWeightItor.next();
 
-                // remove incoming edge to cycle
+                // remove outgoings edge to cycle
                 adjItor.remove();
                 adjWeightItor.remove();
+                // remove incoming edge in vertex not in cycle
+                v.removeInAdj(u_index);
 
                 if (!outgoingVisitedWeight.containsKey(v_index)) {
                     minOutgoingEdge = new Pair<>(u_index, v_index);
@@ -326,6 +335,8 @@ public class DirectedMST {
             Vertex u = vertices.get(u_index);
             u.addInAdj(x_index, pair.getValue());
         }
+
+        // the direction of path is the reverse of cycle list
 
         return 0;
     }
