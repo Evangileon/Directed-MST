@@ -28,6 +28,26 @@ public class DirectedMST {
         numVertices = vertices.size();
     }
 
+    private DirectedMST(ArrayList<Vertex> vertices, int originalNum, int source) {
+        this.vertices = vertices;
+        this.numVertices = originalNum;
+        this.source = source;
+        this.weightReduction = 0;
+    }
+
+    public long procedure() {
+        weightReduction = transformWeight();
+        bfsMSTUsingZeroWeight(source);
+
+        // if all vertices reachable from s
+        if(verifyMST(source) >= 0) {
+            return weightReduction;
+        }
+
+        List<Integer> cycle = walkBackward();
+        return 0;
+    }
+
     /**
      * Add directed edge with weight for both source and destination vertices
      * @param src index of source vertex
@@ -81,6 +101,22 @@ public class DirectedMST {
         }
 
         return sum;
+    }
+
+    /**
+     * Traverse all vertices, if all are reachable from s, then return weight of MST.
+     * Otherwise dive into further procedure: shrink recursion and expand,
+     * and eventually return weight of MST.
+     *
+     * @param source index
+     * @return weight of MST
+     */
+    public long verifyMST(int source) {
+        if (bfsMSTReachableFromS(source)) {
+            return weightReduction;
+        }
+
+        return -1;
     }
 
     /**
@@ -165,21 +201,7 @@ public class DirectedMST {
         }
     }
 
-    /**
-     * Traverse all vertices, if all are reachable from s, then return weight of MST.
-     * Otherwise dive into further procedure: shrink recursion and expand,
-     * and eventually return weight of MST.
-     *
-     * @param source index
-     * @return weight of MST
-     */
-    public long verifyMST(int source) {
-        if (bfsMSTReachableFromS(source)) {
-            return weightReduction;
-        }
 
-        return -1;
-    }
 
     /**
      * Walk backward from one of the vertices that are not reachable from s
