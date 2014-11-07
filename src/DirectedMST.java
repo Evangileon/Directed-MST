@@ -104,22 +104,6 @@ public class DirectedMST {
     }
 
     /**
-     * Traverse all vertices, if all are reachable from s, then return weight of MST.
-     * Otherwise dive into further procedure: shrink recursion and expand,
-     * and eventually return weight of MST.
-     *
-     * @param source index
-     * @return weight of MST
-     */
-    public long verifyMST(int source) {
-        if (bfsMSTReachableFromS(source)) {
-            return weightReduction;
-        }
-
-        return -1;
-    }
-
-    /**
      * BST of graph, which source is source
      * @param source index
      * @return whether all vertices are reachable from s
@@ -201,7 +185,26 @@ public class DirectedMST {
         }
     }
 
+    /**
+     * Traverse all vertices, if all are reachable from s, then return weight of MST.
+     * Otherwise dive into further procedure: shrink recursion and expand,
+     * and eventually return weight of MST.
+     *
+     * @param source index
+     * @return weight of MST
+     */
+    public long verifyMST(int source) {
+        if (bfsMSTReachableFromS(source)) {
+            return weightReduction;
+        }
 
+        // clear MST for recursion
+        for (Vertex v : vertices) {
+            v.pathMST.clear();
+        }
+
+        return -1;
+    }
 
     /**
      * Walk backward from one of the vertices that are not reachable from s
@@ -280,12 +283,14 @@ public class DirectedMST {
             // for all incoming edge of u
             while (adjItor.hasNext()) {
                 int v_index = adjItor.next();
-                //Vertex v = vertices.get(v_index);
+                Vertex v = vertices.get(v_index);
                 int weight = adjWeightItor.next();
 
                 // remove incoming edge to cycle
                 adjItor.remove();
                 adjWeightItor.remove();
+                // remove outgoing edge from vertex not in cycle
+                v.removeOutAdj(u_index);
 
                 if (!imcomingVisitedWeight.containsKey(v_index)) {
                     minIncomingEdge = new Pair<>(v_index, u_index);
@@ -309,12 +314,14 @@ public class DirectedMST {
             // for all incoming edge of u
             while (adjItor.hasNext()) {
                 int v_index = adjItor.next();
-                //Vertex v = vertices.get(v_index);
+                Vertex v = vertices.get(v_index);
                 int weight = adjWeightItor.next();
 
-                // remove incoming edge to cycle
+                // remove outgoings edge to cycle
                 adjItor.remove();
                 adjWeightItor.remove();
+                // remove incoming edge in vertex not in cycle
+                v.removeInAdj(u_index);
 
                 if (!outgoingVisitedWeight.containsKey(v_index)) {
                     minOutgoingEdge = new Pair<>(u_index, v_index);
@@ -348,6 +355,8 @@ public class DirectedMST {
             Vertex u = vertices.get(u_index);
             u.addInAdj(x_index, pair.getValue());
         }
+
+        // the direction of path is the reverse of cycle list
 
         return 0;
     }
