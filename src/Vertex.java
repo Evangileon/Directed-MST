@@ -18,6 +18,8 @@ public class Vertex implements Comparable<Vertex> {
     LinkedList<Integer> outAdj = new LinkedList<>();
     LinkedList<Integer> outAdjWeight = new LinkedList<>();
 
+    LinkedList<Integer> pathMST = new LinkedList<>();
+
     public int inDegree() {
         return inAdj.size();
     }
@@ -67,12 +69,44 @@ public class Vertex implements Comparable<Vertex> {
         }
     }
 
+    public void removeInAdj(int adjIndex) {
+        Iterator<Integer> adjItor = this.inAdj.iterator();
+        Iterator<Integer> adjWeightItor = this.inAdjWeight.iterator();
+
+        while (adjItor.hasNext()) {
+            int index = adjItor.next();
+            adjWeightItor.next();
+
+            if (index == adjIndex) {
+                adjItor.remove();
+                adjWeightItor.remove();
+                return;
+            }
+        }
+    }
+
     public void addOutAdj(int adjIndex, int weight) {
         outAdj.add(adjIndex);
         outAdjWeight.add(weight);
 
         if (weight > maxOutgoingWeight) {
             maxOutgoingWeight = weight;
+        }
+    }
+
+    public void removeOutAdj(int adjIndex) {
+        Iterator<Integer> adjItor = this.outAdj.iterator();
+        Iterator<Integer> adjWeightItor = this.outAdjWeight.iterator();
+
+        while (adjItor.hasNext()) {
+            int index = adjItor.next();
+            adjWeightItor.next();
+
+            if (index == adjIndex) {
+                adjItor.remove();
+                adjWeightItor.remove();
+                return;
+            }
         }
     }
 

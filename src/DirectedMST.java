@@ -157,6 +157,7 @@ public class DirectedMST {
                     if (!v.known) {
                         v.known = true;
                         v.pred = u_index;
+                        u.pathMST.add(v_index);
                         queue.add(v_index);
                     }
                 }
@@ -222,5 +223,110 @@ public class DirectedMST {
         cycle.addAll(v_in_tempList, tempList);
 
         return cycle;
+    }
+
+    class Pair<T> {
+        T from, to;
+
+        public Pair(T from, T to) {
+            this.from = from;
+            this.to = to;
+        }
+    }
+
+    /**
+     * Shrink cycle C into a single node
+     * @param cycle cycle to be shrunk
+     * @return index of new node
+     */
+    public int shrinkCycle(List<Integer> cycle) {
+        // key node not in the cycle -> new minimum edge
+        HashMap<Integer, Integer> imcomingVisitedWeight = new HashMap<>();
+        HashMap<Integer, Integer> outgoingVisitedWeight = new HashMap<>();
+        // record the edge corresponding to this minimum weight in the graph before shrinking
+        Pair<Integer> minIncomingEdge;
+        Pair<Integer> minOutgoingEdge;
+
+
+        // for each vertex in cycle
+        for (Integer u_index : cycle) {
+            Vertex u = vertices.get(u_index);
+
+            Iterator<Integer> adjItor = u.inAdj.iterator();
+            Iterator<Integer> adjWeightItor = u.inAdjWeight.iterator();
+
+            // for all incoming edge of u
+            while (adjItor.hasNext()) {
+                int v_index = adjItor.next();
+                //Vertex v = vertices.get(v_index);
+                int weight = adjWeightItor.next();
+
+                // remove incoming edge to cycle
+                adjItor.remove();
+                adjWeightItor.remove();
+
+                if (!imcomingVisitedWeight.containsKey(v_index)) {
+                    minIncomingEdge = new Pair<>(v_index, u_index);
+                    imcomingVisitedWeight.put(v_index, weight);
+                }
+
+                if (imcomingVisitedWeight.get(v_index) > weight) {
+                    minIncomingEdge = new Pair<>(v_index, u_index);
+                    imcomingVisitedWeight.put(v_index, weight);
+                }
+            }
+        }
+
+        // for each vertex in cycle
+        for (Integer u_index : cycle) {
+            Vertex u = vertices.get(u_index);
+
+            Iterator<Integer> adjItor = u.outAdj.iterator();
+            Iterator<Integer> adjWeightItor = u.outAdjWeight.iterator();
+
+            // for all incoming edge of u
+            while (adjItor.hasNext()) {
+                int v_index = adjItor.next();
+                //Vertex v = vertices.get(v_index);
+                int weight = adjWeightItor.next();
+
+                // remove incoming edge to cycle
+                adjItor.remove();
+                adjWeightItor.remove();
+
+                if (!outgoingVisitedWeight.containsKey(v_index)) {
+                    minOutgoingEdge = new Pair<>(u_index, v_index);
+                    outgoingVisitedWeight.put(v_index, weight);
+                }
+
+                if (outgoingVisitedWeight.get(v_index) > weight) {
+                    minOutgoingEdge = new Pair<>(u_index, v_index);
+                    outgoingVisitedWeight.put(v_index, weight);
+                }
+            }
+        }
+
+        // insert new vertex x
+        Vertex x = new Vertex(vertices.size());
+        int x_index = vertices.size();
+        vertices.add(x);
+
+        // For each edge (u,a) in the graph, with u not in C and a in C, introduce the edge (u,x) of weight w(u,a)
+        for (Map.Entry<Integer, Integer> pair : imcomingVisitedWeight.entrySet()) {
+            int u_index = pair.getKey();
+            x.addInAdj(u_index, pair.getValue());
+            Vertex u = vertices.get(u_index);
+            u.addOutAdj(x_index, pair.getValue());
+        }
+
+        // For each edge (a,u) in the graph, with a in C and u not in C, introduce the edge (x,u) of weight w(a,u)
+        for (Map.Entry<Integer, Integer> pair : outgoingVisitedWeight.entrySet()) {
+            int u_index = pair.getKey();
+            x.addOutAdj(u_index, pair.getValue());
+            Vertex u = vertices.get(u_index);
+            u.addInAdj(x_index, pair.getValue());
+        }
+
+        return 0;
     }
 }
