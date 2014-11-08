@@ -51,8 +51,15 @@ public class DirectedMST {
         weightReduction = transformWeight();
         bfsMSTUsingZeroWeight(source);
 
+        System.out.println("Before verify");
+        printTentativeMST(source);
+        System.out.println("---Graph---");
+        printGraph();
+        System.out.println("---Graph---");
+        System.out.println("---Before verify");
+
         // if all vertices reachable from s
-        if(verifyMST(source) >= 0) {
+        if (verifyMST(source) >= 0) {
             return weightReduction;
         }
 
@@ -63,8 +70,10 @@ public class DirectedMST {
         // recursion for for MST in smaller graph
         DirectedMST smallerGraph = new DirectedMST(this.vertices, this.numVertices, this.source);
         weightReduction += smallerGraph.procedure();
+
+        System.out.println("After recursion");
         printTentativeMST(source);
-        System.out.println("test");
+        System.out.println("---After recursion");
 
         recoverCycle(cycle, x_index);
 
@@ -90,8 +99,9 @@ public class DirectedMST {
 
     /**
      * Add directed edge with weight for both source and destination vertices
-     * @param src index of source vertex
-     * @param dst index of destination vertex
+     *
+     * @param src    index of source vertex
+     * @param dst    index of destination vertex
      * @param weight int
      */
     public void addEdge(int src, int dst, int weight) {
@@ -143,6 +153,7 @@ public class DirectedMST {
 
     /**
      * BST of graph, which source is source
+     *
      * @param source index
      * @return whether all vertices are reachable from s
      */
@@ -225,6 +236,7 @@ public class DirectedMST {
 
     /**
      * Walk backward from one of the vertices that are not reachable from s
+     *
      * @return cycle
      */
     public List<Integer> walkBackward() {
@@ -242,8 +254,8 @@ public class DirectedMST {
 
         assert z != null;
 
-        List<Integer>  tempList = new LinkedList<>();
-        int v_index = z_index;
+        List<Integer> tempList = new LinkedList<>();
+        int v_index;
         Vertex v = z;
         tempList.add(z_index);
 
@@ -288,6 +300,7 @@ public class DirectedMST {
 
     /**
      * Shrink cycle C into a single node
+     *
      * @param cycle cycle to be shrunk
      * @return index of new node
      */
@@ -401,7 +414,8 @@ public class DirectedMST {
 
     /**
      * Include the cycle into MST
-     * @param cycle the zero cycle
+     *
+     * @param cycle   the zero cycle
      * @param x_index to which cycle shrunk
      */
     public void recoverCycle(List<Integer> cycle, int x_index) {
@@ -431,15 +445,21 @@ public class DirectedMST {
         Vertex a = vertices.get(a_index);
         int prevToBeBreak_index = a.pred;
         Vertex prevToBeBreak = vertices.get(prevToBeBreak_index);
-        prevToBeBreak.pathMST.remove((Integer)a_index);
+        prevToBeBreak.pathMST.remove((Integer) a_index);
 
         // third recover incoming edge in MST
         a.pred = pred_x_index;
-        u.pathMST.remove((Integer)x_index);
+        u.pathMST.remove((Integer) x_index);
         u.pathMST.add(a_index);
 
         // fourth recover outgoing edge in MST
-        //Pair<Integer> outgoing =
+        for (int vertexNotInCycleFromX_index : x.pathMST) {
+            Vertex vertexNotInCycleFromX = vertices.get(vertexNotInCycleFromX_index);
+            Pair<Integer> outgoingPair = minOutgoingEdgesFromCycle.get(vertexNotInCycleFromX_index);
+
+            vertexNotInCycleFromX.pred = outgoingPair.from;
+            vertices.get(outgoingPair.from).pathMST.add(vertexNotInCycleFromX_index);
+        }
     }
 
     public void printTentativeMST(int source) {
@@ -456,6 +476,45 @@ public class DirectedMST {
                 queue.add(v_index);
             }
         }
+    }
+
+    public void printGraph() {
+        int zeroCount = 0;
+
+        for (Vertex v : vertices) {
+            v.known = false;
+        }
+
+        Vertex s = vertices.get(source);
+        s.known = true;
+
+        LinkedList<Integer> queue = new LinkedList<>();
+        queue.add(source);
+
+        while (!queue.isEmpty()) {
+            int u_index = queue.remove();
+            Vertex u = vertices.get(u_index);
+
+            Iterator<Integer> iterAdj = u.outAdj.iterator();
+            Iterator<Integer> iterAdjWeight = u.outAdjWeight.iterator();
+            while (iterAdj.hasNext()) {
+                int v_index = iterAdj.next();
+                int weight = iterAdjWeight.next();
+                Vertex v = vertices.get(v_index);
+
+                if (weight == 0) {
+                    zeroCount++;
+                }
+
+                System.out.println(String.format("%d %d %d", u_index, v_index, weight));
+
+                if (!v.known) {
+                    v.known = true;
+                    queue.add(v_index);
+                }
+            }
+        }
+        System.out.println("Count of zero weight = " + zeroCount);
     }
 
     public static void main(String[] args) {

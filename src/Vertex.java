@@ -111,8 +111,9 @@ public class Vertex implements Comparable<Vertex> {
 
     /**
      * Change the weight of outgoing edge
+     *
      * @param adjIndex the index of outgoing edge pointer to
-     * @param change can be positive or negative.
+     * @param change   can be positive or negative.
      */
     public void changeOutgoingWeight(int adjIndex, int change) {
         ListIterator<Integer> itorV = outAdj.listIterator();
