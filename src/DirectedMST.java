@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.*;
 
 /**
@@ -28,7 +29,7 @@ public class DirectedMST {
         for (int i = 0; i < num; i++) {
             vertices.add(new Vertex(i + 1));
         }
-        numVertices = vertices.size();
+        numVertices = vertices.size() - 1;
     }
 
     private DirectedMST(ArrayList<Vertex> vertices, int originalNum, int source) {
@@ -62,6 +63,8 @@ public class DirectedMST {
         // recursion for for MST in smaller graph
         DirectedMST smallerGraph = new DirectedMST(this.vertices, this.numVertices, this.source);
         weightReduction += smallerGraph.procedure();
+        printTentativeMST(source);
+        System.out.println("test");
 
         recoverCycle(cycle, x_index);
 
@@ -81,6 +84,7 @@ public class DirectedMST {
             return weightReduction;
         }
 
+        //printTentativeMST(source);
         return -1;
     }
 
@@ -114,7 +118,7 @@ public class DirectedMST {
             }
             Vertex vertex = vertices.get(u);
             // TODO should d_u be a function or a variable?
-            int d_u = vertex.maxIncomingWeight();
+            int d_u = vertex.minIncomingWeight();
             if (d_u == 0) {
                 // no need to reduce
                 continue;
@@ -224,11 +228,13 @@ public class DirectedMST {
      * @return cycle
      */
     public List<Integer> walkBackward() {
+        int z_index = 0;
         Vertex z = null;
         // find z that is not reachable from s
         for (int i = 1; i < vertices.size(); i++) {
             Vertex v = vertices.get(i);
             if (!v.reachableFromS) {
+                z_index = i;
                 z = v;
                 break;
             }
@@ -237,28 +243,36 @@ public class DirectedMST {
         assert z != null;
 
         List<Integer>  tempList = new LinkedList<>();
+        int v_index = z_index;
         Vertex v = z;
+        tempList.add(z_index);
 
         // find a node that repeats in backward search
         while (true) {
             int zeroEdgeVertex = v.getOneIncomingZeroWeightEdgeVertex();
             assert zeroEdgeVertex != -1;
 
+            v_index = zeroEdgeVertex;
+            v = vertices.get(zeroEdgeVertex);
+
             if (tempList.contains(zeroEdgeVertex)) {
                 break; // v repeated
             }
 
             tempList.add(zeroEdgeVertex);
-            v = vertices.get(zeroEdgeVertex);
         }
 
         // find the cycle begins at v
         // what need to do is truncate temp list begin at v;
-        int v_in_tempList = tempList.indexOf(v.index);
+        int v_in_tempList = tempList.indexOf(v_index);
         assert v_in_tempList != -1;
 
         List<Integer> cycle = new LinkedList<>();
-        cycle.addAll(v_in_tempList, tempList);
+        ListIterator<Integer> itor = tempList.listIterator(v_in_tempList);
+        while (itor.hasNext()) {
+            int v_in_cycle = itor.next();
+            cycle.add(v_in_cycle);
+        }
 
         return cycle;
     }
@@ -417,11 +431,93 @@ public class DirectedMST {
         Vertex a = vertices.get(a_index);
         int prevToBeBreak_index = a.pred;
         Vertex prevToBeBreak = vertices.get(prevToBeBreak_index);
-        prevToBeBreak.pathMST.remove((Object)(Integer)a_index);
+        prevToBeBreak.pathMST.remove((Integer)a_index);
 
         // third recover incoming edge in MST
         a.pred = pred_x_index;
-        u.pathMST.remove((Object)(Integer)x_index);
+        u.pathMST.remove((Integer)x_index);
         u.pathMST.add(a_index);
+
+        // fourth recover outgoing edge in MST
+        //Pair<Integer> outgoing =
+    }
+
+    public void printTentativeMST(int source) {
+        Queue<Integer> queue = new LinkedList<>();
+
+        queue.add(source);
+        while (!queue.isEmpty()) {
+            int u_index = queue.remove();
+            Vertex u = vertices.get(u_index);
+
+            Collections.sort(u.pathMST);
+            for (int v_index : u.pathMST) {
+                System.out.println(String.format("(%d,%d)", u_index, v_index));
+                queue.add(v_index);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+
+        BufferedReader reader = null;
+
+        if (args.length > 0) {
+            try {
+                reader = new BufferedReader(new FileReader(args[0]));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        } else {
+            reader = new BufferedReader(new InputStreamReader(System.in));
+        }
+
+        DirectedMST graph = null;
+
+        String line;
+        assert reader != null;
+        try {
+            line = reader.readLine();
+            if (line == null || line.equals("")) {
+                System.exit(0);
+            }
+
+            line = line.trim();
+            String[] firstParams = line.split("[\\s\\t]+");
+            assert firstParams.length == 3;
+
+            int numVertices = Integer.valueOf(firstParams[0]);
+            int numEdges = Integer.valueOf(firstParams[1]);
+            int source = Integer.valueOf(firstParams[2]);
+
+            graph = new DirectedMST(numVertices, source);
+
+            int count = 0;
+            while ((line = reader.readLine()) != null && !line.equals("")) {
+                count++;
+
+                line = line.trim();
+                String[] params = line.split("[\\s\\t]+");
+                assert params.length == 3;
+
+                int src = Integer.valueOf(params[0]);
+                int dst = Integer.valueOf(params[1]);
+                int weight = Integer.valueOf(params[2]);
+
+                graph.addEdge(src, dst, weight);
+            }
+
+            assert count == numEdges : "The claimed number of edge not equals to actual number";
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (graph != null) {
+            long begin = System.currentTimeMillis();
+            long weightMST = graph.procedure();
+            long end = System.currentTimeMillis();
+            System.out.println(weightMST + " " + (end - begin));
+            graph.printTentativeMST(graph.source);
+        }
     }
 }

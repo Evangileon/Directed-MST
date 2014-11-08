@@ -24,17 +24,17 @@ public class Vertex implements Comparable<Vertex> {
     boolean known;
     int pred;
 
-    public int maxIncomingWeight() {
+    public int minIncomingWeight() {
         Iterator<Integer> inItor = inAdj.iterator();
         Iterator<Integer> inWeightItor = inAdjWeight.iterator();
-        int max = Integer.MIN_VALUE;
+        int min = Integer.MAX_VALUE;
 
         while (inItor.hasNext()) {
             inItor.next();
             int weight = inWeightItor.next();
-            max = Math.max(max, weight);
+            min = Math.min(min, weight);
         }
-        return max;
+        return min;
     }
 
     int maxIncomingWeight;
@@ -116,7 +116,7 @@ public class Vertex implements Comparable<Vertex> {
      */
     public void changeOutgoingWeight(int adjIndex, int change) {
         ListIterator<Integer> itorV = outAdj.listIterator();
-        ListIterator<Integer> itorW = inAdj.listIterator();
+        ListIterator<Integer> itorW = outAdjWeight.listIterator();
 
         while (itorV.hasNext()) {
             int index = itorV.next();
