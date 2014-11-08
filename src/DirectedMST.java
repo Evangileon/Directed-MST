@@ -51,19 +51,20 @@ public class DirectedMST {
         weightReduction = transformWeight();
         bfsMSTUsingZeroWeight(source);
 
-        System.out.println("Before verify");
-        printTentativeMST(source);
-        System.out.println("---Graph---");
-        printGraph();
-        System.out.println("---Graph---");
-        System.out.println("---Before verify");
+//        System.out.println("Before verify");
+//        printTentativeMST(source);
+//        System.out.println("---Graph---");
+//        printGraph();
+//        System.out.println("---Graph---");
+//        System.out.println("---Before verify");
 
         // if all vertices reachable from s
-        if (verifyMST(source) >= 0) {
+        int index = verifyMST(source);
+        if (index < 0) {
             return weightReduction;
         }
 
-        List<Integer> cycle = walkBackward();
+        List<Integer> cycle = walkBackward(index);
 
         int x_index = shrinkCycle(cycle);
 
@@ -71,9 +72,9 @@ public class DirectedMST {
         DirectedMST smallerGraph = new DirectedMST(this.vertices, this.numVertices, this.source);
         weightReduction += smallerGraph.procedure();
 
-        System.out.println("After recursion");
-        printTentativeMST(source);
-        System.out.println("---After recursion");
+//        System.out.println("After recursion");
+//        printTentativeMST(source);
+//        System.out.println("---After recursion");
 
         recoverCycle(cycle, x_index);
 
@@ -86,15 +87,17 @@ public class DirectedMST {
      * and eventually return weight of MST.
      *
      * @param source index
-     * @return weight of MST
+     * @return -1 if this is MST, otherwise the index that are not reachable just using 0 edge
      */
-    public long verifyMST(int source) {
-        if (bfsMSTReachableFromS(source)) {
-            return weightReduction;
+    public int verifyMST(int source) {
+        int index = bfsMSTReachableFromS(source);
+
+        if (index < 0) {
+            return -1;
         }
 
         //printTentativeMST(source);
-        return -1;
+        return index;
     }
 
     /**
@@ -155,9 +158,9 @@ public class DirectedMST {
      * BST of graph, which source is source
      *
      * @param source index
-     * @return whether all vertices are reachable from s
+     * @return -1 if all are reachable from s, otherwise the index that not reachable from s just using 0 edge
      */
-    public boolean bfsMSTReachableFromS(int source) {
+    public int bfsMSTReachableFromS(int source) {
         for (Vertex v : vertices) {
             v.known = false;
         }
@@ -176,7 +179,7 @@ public class DirectedMST {
                 Vertex v = vertices.get(v_index);
 
                 if (!v.reachableFromS) {
-                    return false;
+                    return v_index;
                 }
 
                 if (!v.known) {
@@ -185,7 +188,7 @@ public class DirectedMST {
                 }
             }
         }
-        return true;
+        return -1;
     }
 
     /**
@@ -237,20 +240,21 @@ public class DirectedMST {
     /**
      * Walk backward from one of the vertices that are not reachable from s
      *
+     * @param index not reachable just using 0 edge
      * @return cycle
      */
-    public List<Integer> walkBackward() {
-        int z_index = 0;
-        Vertex z = null;
-        // find z that is not reachable from s
-        for (int i = 1; i < vertices.size(); i++) {
-            Vertex v = vertices.get(i);
-            if (!v.reachableFromS) {
-                z_index = i;
-                z = v;
-                break;
-            }
-        }
+    public List<Integer> walkBackward(int index) {
+        int z_index = index;
+        Vertex z = vertices.get(index);
+//        // find z that is not reachable from s
+//        for (int i = 1; i < vertices.size(); i++) {
+//            Vertex v = vertices.get(i);
+//            if (!v.reachableFromS) {
+//                z_index = i;
+//                z = v;
+//                break;
+//            }
+//        }
 
         assert z != null;
 
@@ -576,7 +580,7 @@ public class DirectedMST {
             long weightMST = graph.procedure();
             long end = System.currentTimeMillis();
             System.out.println(weightMST + " " + (end - begin));
-            graph.printTentativeMST(graph.source);
+            //graph.printTentativeMST(graph.source);
         }
     }
 }
