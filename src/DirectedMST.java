@@ -240,21 +240,11 @@ public class DirectedMST {
     /**
      * Walk backward from one of the vertices that are not reachable from s
      *
-     * @param index not reachable just using 0 edge
+     * @param z_index not reachable just using 0 edge
      * @return cycle
      */
-    public List<Integer> walkBackward(int index) {
-        int z_index = index;
-        Vertex z = vertices.get(index);
-//        // find z that is not reachable from s
-//        for (int i = 1; i < vertices.size(); i++) {
-//            Vertex v = vertices.get(i);
-//            if (!v.reachableFromS) {
-//                z_index = i;
-//                z = v;
-//                break;
-//            }
-//        }
+    public List<Integer> walkBackward(int z_index) {
+        Vertex z = vertices.get(z_index);
 
         assert z != null;
 
@@ -466,6 +456,10 @@ public class DirectedMST {
         }
     }
 
+    /**
+     * Print MST using BFS
+     * @param source index
+     */
     public void printTentativeMST(int source) {
         Queue<Integer> queue = new LinkedList<>();
 
@@ -482,6 +476,9 @@ public class DirectedMST {
         }
     }
 
+    /**
+     * Print all edge to the vertices that reachable from s
+     */
     public void printGraph() {
         int zeroCount = 0;
 
@@ -519,6 +516,39 @@ public class DirectedMST {
             }
         }
         System.out.println("Count of zero weight = " + zeroCount);
+    }
+
+    /**
+     * Order the edges of the MST by their heads
+     * @param source index
+     */
+    public void printMSTByHeads(int source) {
+        Queue<Integer> queue = new LinkedList<>();
+        ArrayList<Pair<Integer>> edges = new ArrayList<>();
+
+        queue.add(source);
+        while (!queue.isEmpty()) {
+            int u_index = queue.remove();
+            Vertex u = vertices.get(u_index);
+
+            Collections.sort(u.pathMST);
+            for (int v_index : u.pathMST) {
+
+                edges.add(new Pair<>(u_index, v_index));
+                queue.add(v_index);
+            }
+        }
+
+        Collections.sort(edges, new Comparator<Pair<Integer>>() {
+            @Override
+            public int compare(Pair<Integer> o1, Pair<Integer> o2) {
+                return o1.to - o2.to;
+            }
+        });
+
+        for (Pair<Integer> pair : edges) {
+            System.out.println(String.format("(%d,%d)", pair.from, pair.to));
+        }
     }
 
     public static void main(String[] args) {
@@ -580,6 +610,9 @@ public class DirectedMST {
             long weightMST = graph.procedure();
             long end = System.currentTimeMillis();
             System.out.println(weightMST + " " + (end - begin));
+            if (graph.numVertices <= 50) {
+                graph.printMSTByHeads(graph.source);
+            }
             //graph.printTentativeMST(graph.source);
         }
     }
